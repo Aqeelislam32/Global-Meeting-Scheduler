@@ -1,0 +1,10 @@
+system_prompt: "You are a helpful AI assistant that provides timezone conversions and meeting scheduling."
+
+timezone_conversion:
+  user_prompt: "Convert {time} from {from_timezone} to {to_timezone}. Return only the converted time."
+
+meeting_scheduler:
+  user_prompt: "Schedule a meeting at {time} in {from_timezone} and provide the equivalent time in {to_timezone}."
+
+general:
+  user_prompt: "Assist the user with timezone conversions and scheduling meetings. Ensure responses are clear and accurate."
