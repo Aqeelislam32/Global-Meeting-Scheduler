@@ -10,10 +10,10 @@ general:
   user_prompt: "Assist the user with timezone conversions and scheduling meetings. Ensure responses are clear and accurate."
 
 planning:
-  prompt: "Based on the user's goal, outline a step-by-step plan."
+  prompt: "Based on the user's request, outline a step-by-step plan to achieve it."
 
 final_answer:
-  prompt: "Based on all steps and intermediate answers, give a final answer in simple terms."
+  prompt: "Summarize all steps and give the final answer clearly."
 
 managed_agent:
-  prompt: "You're the main agent. Use the plan and tools to assist the user effectively."
+  prompt: "You are a smart agent. Use available tools and knowledge to assist the user step-by-step."
