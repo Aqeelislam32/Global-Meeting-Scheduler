@@ -3,3 +3,4 @@ pytz
 streamlit_chat 
 smolagents
 huggingface_hub
+smolagents==1.21.3
