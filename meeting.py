@@ -7,6 +7,10 @@ from smolagents import CodeAgent, HfApiModel, tool
 from huggingface_hub import InferenceClient
 from streamlit_chat import message
 
+from smolagents import CodeAgent, HfApiModel
+from smolagents.tools import tool
+
+
 from zoneinfo import available_timezones
 
 # Custom CSS for styling
@@ -136,4 +140,5 @@ elif option == "📅 Schedule Meeting":
             st.success(f"📌 Meeting scheduled on **{meeting_date.strftime('%A, %d %B %Y')}** at **{converted_time}**.")
         else:
             st.error("⚠️ Please enter a valid meeting time.")
+
 
