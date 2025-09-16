@@ -3,7 +3,7 @@ import streamlit as st
 import datetime
 import pytz
 import yaml
-from smolagents import CodeAgent, HfApiModel, tool
+
 from huggingface_hub import InferenceClient
 from streamlit_chat import message
 
@@ -140,5 +140,6 @@ elif option == "📅 Schedule Meeting":
             st.success(f"📌 Meeting scheduled on **{meeting_date.strftime('%A, %d %B %Y')}** at **{converted_time}**.")
         else:
             st.error("⚠️ Please enter a valid meeting time.")
+
 
 
