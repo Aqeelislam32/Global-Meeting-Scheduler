@@ -7,13 +7,11 @@ import yaml
 from huggingface_hub import InferenceClient
 from streamlit_chat import message
 
-from smolagents import CodeAgent, HfApiModel
-from smolagents.tools import tool
-
+from smolagents import CodeAgent, tool
 
 from zoneinfo import available_timezones
 
-# Custom CSS for styling
+# ---------------- UI STYLE ----------------
 st.markdown(
     """
     <style>
@@ -22,124 +20,90 @@ st.markdown(
         .stButton>button { background-color: #8B4513 !important; color: white !important; border-radius: 8px; }
         .stButton>button:hover { background-color: #5a2e1a !important; }
         .stTextArea textarea, .stTextInput input { background-color: #008000 !important; color: white !important; border-radius: 8px; }
-        .stTextArea textarea::placeholder, .stTextInput input::placeholder { color: white !important; font-style: italic; }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Available timezones for specific countries
+# ---------------- TIMEZONES ----------------
 country_timezones = {
     "Pakistan": pytz.country_timezones.get('PK', []),
     "India": pytz.country_timezones.get('IN', []),
     "USA": pytz.country_timezones.get('US', []),
     "UK": pytz.country_timezones.get('GB', []),
 }
-# Set Hugging Face API Token securely
-# Set Hugging Face API Token
 
-# Initialize Hugging Face Inference Client
-client = InferenceClient("https://jc26mwg228mkj8dw.us-east-1.aws.endpoints.huggingface.cloud")
+# ---------------- HF CLIENT ----------------
+client = InferenceClient(
+    model="Qwen/Qwen2.5-Coder-32B-Instruct"
+)
 
+# ---------------- TOOL ----------------
 @tool
 def get_current_time_in_timezone(timezone: str) -> str:
-    """Fetches the current local time in a specified timezone.
-    Args:
-        timezone: A string representing a valid timezone (e.g., 'America/New_York').
-    """
     try:
         tz = pytz.timezone(timezone)
         local_time = datetime.datetime.now(tz).strftime("%I:%M %p")
-        return f"✅ The current time in **{timezone}** is **{local_time}**."
+        return f"The current time in {timezone} is {local_time}"
     except Exception as e:
-        return f"⚠️ Error fetching time for timezone '{timezone}': {str(e)}"
-# Function to convert time between timezones
+        return str(e)
+
+# ---------------- TIME CONVERTER ----------------
 def convert_timezone(time_str, from_tz, to_tz):
-    """Converts time from one timezone to another."""
     try:
         from_zone = pytz.timezone(from_tz)
         to_zone = pytz.timezone(to_tz)
-        
-        # Convert string time to datetime object
+
         naive_time = datetime.datetime.strptime(time_str, "%I:%M %p")
-        
-        # Localize the time to the source timezone
         localized_time = from_zone.localize(naive_time)
-        
-        # Convert to the target timezone
         converted_time = localized_time.astimezone(to_zone)
-        
-        # Format the output time
+
         return converted_time.strftime("%I:%M %p")
     except Exception as e:
-        return f"⚠️ Error: {str(e)}"
+        return f"Error: {str(e)}"
 
+# ---------------- AGENT (FIXED) ----------------
+model = client  # IMPORTANT FIX
 
-# Load Model
-model = HfApiModel(
-    max_tokens=2096,
-    temperature=0.5,
-    model_id='Qwen/Qwen2.5-Coder-32B-Instruct',
-    custom_role_conversions=None,
-)
-
-# Load Prompt Templates
-with open("prompt.yaml", 'r') as stream:
-    prompt_templates = yaml.safe_load(stream)
-
-# Create CodeAgent
 agent = CodeAgent(
     model=model,
     tools=[get_current_time_in_timezone],
-    max_steps=6,
-    verbosity_level=1,
-    grammar=None,
-    planning_interval=None,
-    name=None,
-    description=None,
-    prompt_templates=prompt_templates
+    max_steps=6
 )
 
-# Function for text generation using Hugging Face LLM
-def generate_text(prompt: str):
-    output = client.text_generation(
-        prompt,
-        max_new_tokens=100,
-    )
-    return output
-
-# Sidebar
+# ---------------- STREAMLIT UI ----------------
 st.sidebar.title("🔹 Scheduling Assistant")
-option = st.sidebar.radio("📌 Choose a feature:", ("🌍 Timezone Converter", "📅 Schedule Meeting"))
+option = st.sidebar.radio("Choose:", ("🌍 Timezone Converter", "📅 Schedule Meeting"))
 
+# ---------------- TIMEZONE CONVERTER ----------------
 if option == "🌍 Timezone Converter":
     st.title("🕒 Timezone Converter")
-    time_input = st.text_input("Enter Time (HH:MM AM/PM)", placeholder="Example: 02:30 PM")
-    
+
+    time_input = st.text_input("Enter Time (HH:MM AM/PM)")
     from_timezone = st.selectbox("From Timezone", pytz.all_timezones)
     to_timezone = st.selectbox("To Timezone", pytz.all_timezones)
-    
+
     if st.button("Convert Time"):
         if time_input:
             result = convert_timezone(time_input, from_timezone, to_timezone)
             st.success(result)
         else:
-            st.error("⚠️ Please enter a valid time.")
+            st.error("Enter valid time")
+
+# ---------------- MEETING SCHEDULER ----------------
 elif option == "📅 Schedule Meeting":
     st.title("📅 Global Meeting Scheduler")
 
-    # Date picker for meeting date
-    meeting_date = st.date_input("📆 Select Meeting Date")  # Added date input
-    meeting_time = st.text_input("Enter Meeting Time (HH:MM AM/PM)", placeholder="Example: 04:15 PM")
-    user_timezone = st.selectbox("Your Timezone", sorted(pytz.all_timezones))
-    attendee_timezone = st.selectbox("Attendee Timezone", sorted(pytz.all_timezones))
-    
-    if st.button("Schedule Meeting"):
+    meeting_date = st.date_input("Select Date")
+    meeting_time = st.text_input("Meeting Time (HH:MM AM/PM)")
+    user_timezone = st.selectbox("Your Timezone", pytz.all_timezones)
+    attendee_timezone = st.selectbox("Attendee Timezone", pytz.all_timezones)
+
+    if st.button("Schedule"):
         if meeting_time:
             converted_time = convert_timezone(meeting_time, user_timezone, attendee_timezone)
-            st.success(f"📌 Meeting scheduled on **{meeting_date.strftime('%A, %d %B %Y')}** at **{converted_time}**.")
+            st.success(
+                f"Meeting on {meeting_date.strftime('%A, %d %B %Y')} at {converted_time}"
+            )
         else:
-            st.error("⚠️ Please enter a valid meeting time.")
-
-
-
+            st.error("Enter valid time")
