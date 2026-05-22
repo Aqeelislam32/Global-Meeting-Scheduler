@@ -3,27 +3,21 @@ import streamlit as st
 import datetime
 import pytz
 import yaml
-
 from huggingface_hub import InferenceClient
 from streamlit_chat import message
-
-from smolagents import CodeAgent, tool
-
 from zoneinfo import available_timezones
 
-# ---------------- UI STYLE ----------------
-st.markdown(
-    """
-    <style>
-        .stApp { background-color: #FFDAB9; }
-        [data-testid="stSidebar"] { background-color: #DEB887 !important; }
-        .stButton>button { background-color: #8B4513 !important; color: white !important; border-radius: 8px; }
-        .stButton>button:hover { background-color: #5a2e1a !important; }
-        .stTextArea textarea, .stTextInput input { background-color: #008000 !important; color: white !important; border-radius: 8px; }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# ---------------- UI ----------------
+st.markdown("""
+<style>
+.stApp { background-color: #FFDAB9; }
+[data-testid="stSidebar"] { background-color: #DEB887 !important; }
+.stButton>button { background-color: #8B4513 !important; color: white !important; }
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------- HF CLIENT ----------------
+client = InferenceClient(model="Qwen/Qwen2.5-Coder-32B-Instruct")
 
 # ---------------- TIMEZONES ----------------
 country_timezones = {
@@ -32,21 +26,6 @@ country_timezones = {
     "USA": pytz.country_timezones.get('US', []),
     "UK": pytz.country_timezones.get('GB', []),
 }
-
-# ---------------- HF CLIENT ----------------
-client = InferenceClient(
-    model="Qwen/Qwen2.5-Coder-32B-Instruct"
-)
-
-# ---------------- TOOL ----------------
-@tool
-def get_current_time_in_timezone(timezone: str) -> str:
-    try:
-        tz = pytz.timezone(timezone)
-        local_time = datetime.datetime.now(tz).strftime("%I:%M %p")
-        return f"The current time in {timezone} is {local_time}"
-    except Exception as e:
-        return str(e)
 
 # ---------------- TIME CONVERTER ----------------
 def convert_timezone(time_str, from_tz, to_tz):
@@ -62,20 +41,11 @@ def convert_timezone(time_str, from_tz, to_tz):
     except Exception as e:
         return f"Error: {str(e)}"
 
-# ---------------- AGENT (FIXED) ----------------
-model = client  # IMPORTANT FIX
-
-agent = CodeAgent(
-    model=model,
-    tools=[get_current_time_in_timezone],
-    max_steps=6
-)
-
 # ---------------- STREAMLIT UI ----------------
 st.sidebar.title("🔹 Scheduling Assistant")
 option = st.sidebar.radio("Choose:", ("🌍 Timezone Converter", "📅 Schedule Meeting"))
 
-# ---------------- TIMEZONE CONVERTER ----------------
+# ---------------- CONVERTER ----------------
 if option == "🌍 Timezone Converter":
     st.title("🕒 Timezone Converter")
 
@@ -83,14 +53,14 @@ if option == "🌍 Timezone Converter":
     from_timezone = st.selectbox("From Timezone", pytz.all_timezones)
     to_timezone = st.selectbox("To Timezone", pytz.all_timezones)
 
-    if st.button("Convert Time"):
+    if st.button("Convert"):
         if time_input:
             result = convert_timezone(time_input, from_timezone, to_timezone)
             st.success(result)
         else:
             st.error("Enter valid time")
 
-# ---------------- MEETING SCHEDULER ----------------
+# ---------------- MEETING ----------------
 elif option == "📅 Schedule Meeting":
     st.title("📅 Global Meeting Scheduler")
 
