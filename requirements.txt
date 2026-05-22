@@ -1,6 +1,5 @@
 streamlit
 pytz
-streamlit_chat 
-smolagents
-huggingface_hub
+streamlit_chat
 smolagents==1.19.0
+huggingface_hub
