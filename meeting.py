@@ -7,7 +7,7 @@ import yaml
 from huggingface_hub import InferenceClient
 from streamlit_chat import message
 
-from smolagents import CodeAgent, HfApiModel
+from smolagents import CodeAgent
 from smolagents.tools import tool
 
 
